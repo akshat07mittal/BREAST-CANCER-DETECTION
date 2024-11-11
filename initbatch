@@ -1,0 +1,50 @@
+import os
+import shutil
+import numpy as np
+import pandas as pd
+import cv2
+
+from tqdm import tqdm
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+#%%
+BACH_ROOT_PATH = "kaggle/input/bach-breast-cancer-histology-images/ICIAR2018_BACH_Challenge/ICIAR2018_BACH_Challenge/Photos"
+#%%
+bach_list = list()
+
+for diagnosis in os.listdir(BACH_ROOT_PATH):
+    folder = os.path.join(BACH_ROOT_PATH, diagnosis)
+    if os.path.isdir(folder):
+        for img in os.listdir(folder):
+            img = os.path.join(folder, img)
+            bach_list.append([img, diagnosis])
+#%%
+len(bach_list)
+#%%
+df = pd.DataFrame(bach_list, columns=["path", "type"])
+df.head()
+#%%
+df.to_csv("kaggle/working/bach_data.csv")
+#%%
+sns.countplot(x=df["type"])
+#%%
+df["pixel_mean"] = np.zeros(len(df))
+df["pixel_std"] = np.zeros(len(df))
+
+i = 0
+for path in tqdm(df["path"]):
+    try:
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        df["pixel_mean"][i] = np.mean(img)
+        df["pixel_std"][i] = np.std(img)
+        i += 1
+    except:
+        print("--------------)")
+        print(path)
+#%%
+sns.kdeplot(df["pixel_mean"], fill=True, label="pixel mean")
+sns.kdeplot(df["pixel_std"], fill=True, label="pixel std")
+plt.legend()
+
